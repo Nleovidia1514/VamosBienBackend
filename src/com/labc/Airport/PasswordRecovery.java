@@ -6,6 +6,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashMap;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.MultipartConfig;
@@ -47,6 +48,7 @@ public class PasswordRecovery extends HttpServlet {
 					stm.execute();
 					Cookie cookie = new Cookie("email", userEmail);
 					cookie.setMaxAge(300);
+					cookie.setPath("/Airport/PasswordRecovery");
 					response.addCookie(cookie);
 					if(Mailer.send(userEmail, "Vamos bien Password Recovery", "<p>There was an attempt to recover"
 							+ " your password in www.VamosBien.com, if this wasn't you please ignore this message"
@@ -55,7 +57,12 @@ public class PasswordRecovery extends HttpServlet {
 				}
 				break;
 			case "verifyCode":
-				userEmail = request.getCookies()[1].getValue();
+				Cookie[] cooks = request.getCookies();
+				HashMap<String, String> cookies = new HashMap<String, String>();
+				for(Cookie cook : cooks) {
+					cookies.put(cook.getName(), cook.getValue());
+				}
+				userEmail = cookies.get("email");
 				try(PreparedStatement stm = conn.prepareStatement(pr.getValue("check_if_user_exists"))) {
 					stm.setString(1, userEmail);
 					ResultSet rs = stm.executeQuery();

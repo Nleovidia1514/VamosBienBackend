@@ -7,6 +7,8 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -32,6 +34,7 @@ public class Flights extends HttpServlet {
 		response.setContentType("application/json");
 		PrintWriter out = response.getWriter();	
 		String jsonToSend = "{";
+		DateFormat df = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
 		try (Connection conn = Pool.getConnection()){
 			if(request.getQueryString() != null) {
 				try(PreparedStatement stm = conn.prepareStatement(propRead.getValue("fetch_flight"))){
@@ -39,7 +42,8 @@ public class Flights extends HttpServlet {
 					ResultSet rs = stm.executeQuery();
 					while(rs.next()) {
 						jsonToSend += ""	
-								+ "\"dateDepart\":\""+rs.getTimestamp("dateDepart_vuelo")+"\","
+								+ "\"airline\":\""+rs.getString("name_airline")+"\","
+								+ "\"dateDepart\":\""+df.format(rs.getTimestamp("dateDepart_vuelo"))+"\","
 								+ "\"timeOfDepart\":\""+rs.getString("timeDepart_vuelo")+"\","
 								+ "\"timeOfArrival\":\""+rs.getString("timeArriv_vuelo")+"\","
 								+ "\"depart\":\""+rs.getString("departure_vuelo")+"\","
@@ -63,7 +67,7 @@ public class Flights extends HttpServlet {
 							flight += ",";
 						}
 							flight += "\""+rs.getString("id_vuelo") + "\":{"
-									+ "\"dateDepart\":\""+rs.getTimestamp("dateDepart_vuelo")+"\","
+									+ "\"dateDepart\":\""+df.format(rs.getTimestamp("dateDepart_vuelo"))+"\","
 									+ "\"depart\":\""+rs.getString("departure_vuelo")+"\","
 									+ "\"destiny\":\""+rs.getString("destiny_vuelo")+"\","
 									+ "\"picture\":\""+rs.getString("picture_vuelo")+"\","
@@ -91,16 +95,15 @@ public class Flights extends HttpServlet {
 		
 		response.setContentType("text/plain");
 		PrintWriter out = response.getWriter();	
-		
 		try (Connection conn = Pool.getConnection();) {
-			try(PreparedStatement stm = conn.prepareStatement(propRead.getValue("delete_flight"))) {
-				stm.setInt(1, Integer.valueOf(request.getParameter("id")));
-				stm.execute();
-				response.setStatus(200);
-				out.write("Flight deleted succesfully!");
-			}
+			PreparedStatement stm = conn.prepareStatement(propRead.getValue("delete_flight"));
+			stm.setInt(1, Integer.valueOf(request.getParameter("id")));
+			stm.execute();
+			response.setStatus(200);
+			out.write("Flight deleted succesfully!");	
 		} catch (SQLException e) {
 			out.write("There was an error deleting the flight!");
+			response.setStatus(500);
 			e.printStackTrace();
 		}
 	}
